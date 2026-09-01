@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Variant Annotation Pipeline — Parham</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body class="project-page">
+
+<nav class="top">
+  <div class="wrap">
+    <a class="brand" href="../index.html" style="text-decoration:none;">Parham</a>
+    <span class="links">
+      <a href="../index.html#projects">Projects</a>
+      <a href="../index.html#contact">Contact</a>
+    </span>
+  </div>
+</nav>
+
+<main>
+  <div class="wrap">
+    <article>
+      <a class="back" href="../index.html#projects">&larr; Back to projects</a>
+      <h1>Variant Annotation Pipeline</h1>
+      <p class="meta">Cancer genomics · Python, pandas, scikit-learn · Dataset: TCGA-LAML (MAF)</p>
+
+      <p>
+        Raw variant callers output only genomic coordinates and alleles &mdash; something like
+        <code>chr17:7578403, C&rarr;T</code>. They don't know which gene that's in or what it does
+        to the protein. Turning that into something useful is the job of an <strong>annotation
+        pipeline</strong> (real tools: VEP, ANNOVAR). This project builds a small one from scratch,
+        and validates it against the original MAF's professional annotations as ground truth.
+      </p>
+
+      <h2>Setup: hide the answers, then try to recover them</h2>
+      <p>
+        The MAF file already has the gene name and consequence for every mutation &mdash; using
+        that would make this a lookup, not a pipeline. So the raw input is stripped down to only
+        what a variant caller actually produces: chromosome, position, reference/alternate allele,
+        sample ID. Everything else is rebuilt from scratch and checked against the hidden originals.
+      </p>
+      <p>
+        The patient cohort is also split train/test <em>by patient</em> (not by mutation row), so
+        the pipeline is evaluated on patients it has genuinely never seen, the same way the
+        Driver Mutation Classifier's train/test split works.
+      </p>
+
+      <h2>Stage 1: gene mapping</h2>
+      <p>
+        A gene reference table is built from the training patients only: for each gene, the
+        min/max mutation position observed defines an approximate coordinate span (padded by
+        2kb). A held-out variant's gene is predicted by checking which span its position falls
+        inside.
+      </p>
+
+      <h2>Stage 2: variant typing &mdash; and a real bug</h2>
+      <p>
+        SNP vs. insertion vs. deletion is decided purely by comparing reference and alternate
+        allele lengths. First pass got 15 deletions and 14 insertions wrong. The cause: MAF
+        format uses the literal character <code>"-"</code> to mean "zero-length allele" (nothing
+        there), not an actual one-character base. <code>len("-")</code> evaluates to 1 in Python,
+        so a deletion like <code>ref="G", alt="-"</code> was being read as two equal-length
+        one-character alleles &mdash; i.e. a same-length substitution, which the code then called
+        a SNP. Same category of issue as the <code>-Inf</code> placeholder handled in the
+        <a href="survival-analysis.html">Survival Analysis</a> project: a format-specific
+        placeholder that looks like real data unless you know to check for it.
+      </p>
+      <pre><code>ref_len = 0 if ref == "-" else len(ref)
+alt_len = 0 if alt == "-" else len(alt)</code></pre>
+      <p>After normalizing both alleles this way, variant type classification reached 100% on the held-out set.</p>
+
+      <h2>Results</h2>
+      <figure>
+        <img src="../assets/img/variant_annotator.png" alt="Gene annotation outcome bar chart and variant type classification confusion matrix">
+        <figcaption>Fig. 1 — Left: gene annotation outcome on held-out patients. Right: variant type classification, after the allele-length fix.</figcaption>
+      </figure>
+      <p>
+        The headline number that matters here isn't "21.3% gene accuracy" in isolation &mdash;
+        it's the breakdown: <strong>when the reference table had an entry for the gene at all,
+        the position lookup was correct 100% of the time.</strong> The failures are entirely a
+        coverage problem, not a logic problem. This cohort has roughly 1,600 unique mutated
+        genes across only 2,207 total mutations &mdash; most genes are hit exactly once in the
+        entire dataset &mdash; so a train/test split on patients will always leave many test-set
+        genes that the training patients simply never mutated.
+      </p>
+      <p>
+        This is precisely why real annotation tools like VEP and ANNOVAR don't build their gene
+        reference from observed mutations at all &mdash; they use a genome-wide transcript
+        database (RefSeq/Ensembl) covering all ~20,000 human genes regardless of whether any
+        were mutated in a given study. This pipeline's simplification (building the reference
+        from observed data) is the direct cause of its main limitation, and being able to name
+        that cause &mdash; rather than just report a low number &mdash; is the actual point of
+        the exercise.
+      </p>
+
+      <h2>What I'd extend next</h2>
+      <p>
+        Swap the homemade gene reference for a real genome-wide coordinate file (RefSeq or
+        Ensembl GTF) to remove the coverage gap entirely, and add exon-boundary awareness so
+        frame-consequence prediction accounts for intron/exon structure instead of raw
+        position spans.
+      </p>
+    </article>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    Built with public cancer genomics datasets (TCGA). Source on <a href="https://github.com/yourusername/bioinformatics-portfolio" target="_blank" rel="noopener">GitHub</a>.
+  </div>
+</footer>
+
+</body>
+</html>

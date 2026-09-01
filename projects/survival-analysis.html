@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Survival Analysis Dashboard — Parham</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body class="project-page">
+
+<nav class="top">
+  <div class="wrap">
+    <a class="brand" href="../index.html" style="text-decoration:none;">Parham</a>
+    <span class="links">
+      <a href="../index.html#projects">Projects</a>
+      <a href="../index.html#contact">Contact</a>
+    </span>
+  </div>
+</nav>
+
+<main>
+  <div class="wrap">
+    <article>
+      <a class="back" href="../index.html#projects">&larr; Back to projects</a>
+      <h1>Survival Analysis Dashboard</h1>
+      <p class="meta">Cancer genomics · Python, pandas, lifelines · Dataset: TCGA-LAML (MAF + clinical)</p>
+
+      <p>
+        Knowing a gene is frequently mutated (see the <a href="mutation-landscape.html">Mutation Landscape
+        Explorer</a>) doesn't tell you whether it matters clinically. This project asks the next question:
+        do patients with a mutation in a given gene actually survive differently than patients without one?
+        The standard tool for this is the Kaplan-Meier estimator, paired with a log-rank test for significance.
+      </p>
+
+      <h2>Data</h2>
+      <p>
+        Two files, same TCGA-LAML cohort, joined on patient barcode: the MAF mutation file from the first
+        project, and a clinical annotation file with <code>days_to_last_followup</code> (how long the
+        patient was tracked) and <code>Overall_Survival_Status</code> (1 = death recorded, 0 = still alive
+        at last contact &mdash; a "censored" observation).
+      </p>
+
+      <h2>A real data-cleaning problem</h2>
+      <p>
+        The clinical file uses the literal string <code>-Inf</code> as a placeholder for "no valid
+        follow-up time," which pandas silently parses as a real floating-point <code>-inf</code>
+        rather than a missing value. Left unhandled, this breaks the analysis (and would break it
+        silently &mdash; no error, just wrong survival curves). The fix: detect non-finite values, convert
+        them to <code>NaN</code>, and drop those patients before fitting anything.
+      </p>
+      <pre><code>clin["days_to_last_followup"] = clin["days_to_last_followup"].replace([np.inf, -np.inf], np.nan)
+clin = clin.dropna(subset=["days_to_last_followup"])
+# 200 patients -> 188 with usable follow-up time</code></pre>
+
+      <h2>Method</h2>
+      <p>
+        For each gene, patients are split into "mutant" (has &ge;1 mutation in that gene per the MAF file)
+        and "wild-type" (no mutation recorded). A Kaplan-Meier curve is fit for each group using
+        <code>lifelines</code>, and a log-rank test gives a p-value for whether the two curves differ
+        more than expected by chance.
+      </p>
+
+      <h2>Results</h2>
+      <p>
+        Run across the four most frequently mutated genes from the Mutation Landscape project:
+      </p>
+      <figure>
+        <img src="../assets/img/survival_panel.png" alt="Kaplan-Meier survival curves for FLT3, DNMT3A, NPM1, and TP53 mutant vs wild-type patients">
+        <figcaption>Fig. 1 — Overall survival, mutant vs. wild-type, for four AML driver genes (188 patients with valid follow-up data).</figcaption>
+      </figure>
+      <p>
+        <strong>TP53</strong>-mutant patients (n=14) show a sharp drop in survival compared to
+        wild-type (log-rank p &lt; 0.0001) &mdash; consistent with TP53 mutations being one of the
+        strongest known adverse prognostic markers in AML. <strong>DNMT3A</strong> mutations are also
+        associated with worse survival (p = 0.001). <strong>FLT3</strong> trends toward worse survival
+        but doesn't reach significance here (p = 0.14) &mdash; likely because this analysis lumps all
+        FLT3 mutation types together, while in the literature it's specifically the FLT3-ITD subtype
+        that's prognostic, not FLT3 mutations generally. <strong>NPM1</strong> shows no difference
+        (p = 0.81) in this simple two-group split, though NPM1's prognostic effect in AML is known to
+        depend on FLT3 co-mutation status &mdash; a good example of why single-gene survival splits are
+        a starting point, not the final word.
+      </p>
+
+      <h2>What I'd extend next</h2>
+      <p>
+        Multivariate Cox regression to test genes jointly (and adjust for age/FAB subtype), and
+        specifically separating FLT3-ITD from other FLT3 mutation types, since ITD status is the
+        clinically actionable distinction.
+      </p>
+    </article>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    Built with public cancer genomics datasets (TCGA). Source on <a href="https://github.com/yourusername/bioinformatics-portfolio" target="_blank" rel="noopener">GitHub</a>.
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mutation Landscape Explorer — Parham</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body class="project-page">
+
+<nav class="top">
+  <div class="wrap">
+    <a class="brand" href="../index.html" style="text-decoration:none;">Parham</a>
+    <span class="links">
+      <a href="../index.html#projects">Projects</a>
+      <a href="../index.html#contact">Contact</a>
+    </span>
+  </div>
+</nav>
+
+<main>
+  <div class="wrap">
+    <article>
+      <a class="back" href="../index.html#projects">&larr; Back to projects</a>
+      <h1>Mutation Landscape Explorer</h1>
+      <p class="meta">Cancer genomics · Python, pandas, matplotlib · Dataset: TCGA-LAML (MAF)</p>
+
+      <p>
+        Every cancer genomics analysis starts with the same question: which genes are actually
+        mutated, and how often? This project answers that for TCGA-LAML, a public cohort of
+        193 acute myeloid leukemia (AML) patients, by building a cohort-level mutation summary
+        and an oncoplot &mdash; the standard way cancer genomics papers visualize who has a
+        mutation in what.
+      </p>
+
+      <h2>Data</h2>
+      <p>
+        The dataset is a MAF (Mutation Annotation Format) file: one row per somatic mutation,
+        with the gene, sample, and variant classification (missense, nonsense, frameshift, etc.)
+        for each. It's the same TCGA-LAML dataset distributed with the widely used
+        <code>maftools</code> R package, so the numbers below can be checked against the
+        published literature on this cohort.
+      </p>
+
+      <h2>Cohort summary</h2>
+      <div class="gene-panel">
+        <div><span class="k">Samples</span>193</div>
+        <div><span class="k">Genes mutated</span>1,611</div>
+        <div><span class="k">Total mutations</span>2,207</div>
+        <div><span class="k">Avg. mutations / sample</span>11.44</div>
+      </div>
+
+      <h2>Mutation type breakdown</h2>
+      <p>
+        Missense mutations dominate the cohort, followed by silent (synonymous) mutations and
+        nonsense mutations &mdash; a typical pattern for solid and hematologic tumors alike.
+      </p>
+      <figure>
+        <img src="../assets/img/mutation_types.png" alt="Bar chart of mutation type counts across the TCGA-LAML cohort">
+        <figcaption>Fig. 1 — Count of each variant classification across all 2,207 mutations.</figcaption>
+      </figure>
+
+      <h2>The oncoplot</h2>
+      <p>
+        The oncoplot below shows the 20 most frequently mutated genes (rows) across all 193
+        samples (columns), colored by mutation type. The side bar shows the percentage of
+        patients carrying a mutation in that gene. <strong>FLT3</strong>, <strong>DNMT3A</strong>,
+        and <strong>NPM1</strong> top the list &mdash; exactly the trio best known to drive AML,
+        which is a good sanity check that the pipeline is working correctly.
+      </p>
+      <figure>
+        <img src="../assets/img/oncoplot.png" alt="Oncoplot of the top 20 mutated genes in TCGA-LAML, colored by mutation type">
+        <figcaption>Fig. 2 — Mutation landscape of the top 20 mutated genes in TCGA-LAML.</figcaption>
+      </figure>
+
+      <h2>How it's built</h2>
+      <p>
+        The core logic groups mutations by gene and sample, keeps the variant classification
+        (or marks a cell "Multi_Hit" if a sample has more than one mutation type in the same
+        gene), then renders each cell as a colored rectangle:
+      </p>
+      <pre><code>gene_sample_counts = (
+    maf.groupby("Hugo_Symbol")["Tumor_Sample_Barcode"]
+       .nunique()
+       .sort_values(ascending=False)
+)
+top_genes = gene_sample_counts.head(20).index.tolist()
+
+grouped = sub.groupby(["Hugo_Symbol", "Tumor_Sample_Barcode"])["Variant_Classification"] \
+             .apply(lambda x: x.iloc[0] if x.nunique() == 1 else "Multi_Hit")</code></pre>
+      <p>
+        Full source, including the plotting code, is in the project's
+        <a href="https://github.com/yourusername/bioinformatics-portfolio/tree/main/projects/mutation-landscape" target="_blank" rel="noopener">GitHub repo</a>.
+      </p>
+
+      <h2>What I'd extend next</h2>
+      <p>
+        Natural follow-ups: cross-reference the top genes against a curated driver gene list
+        (e.g. OncoKB or COSMIC Cancer Gene Census) to flag which are known drivers vs.
+        recurrently-mutated passengers, and add co-occurrence/mutual-exclusivity testing
+        between gene pairs &mdash; a common next step in cancer genomics papers.
+      </p>
+    </article>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    Built with public cancer genomics datasets (TCGA). Source on <a href="https://github.com/yourusername/bioinformatics-portfolio" target="_blank" rel="noopener">GitHub</a>.
+  </div>
+</footer>
+
+</body>
+</html>

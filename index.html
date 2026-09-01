@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parham Salimi — Bioinformatics Portfolio</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="top">
+  <div class="wrap">
+    <span class="brand">Parham Salimi</span>
+    <span class="links">
+      <a href="#projects">Projects</a>
+      <a href="#skills">Skills</a>
+      <a href="#contact">Contact</a>
+    </span>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <h1>Finding signal in the noise of the cancer genome.</h1>
+    <p class="role">Bioinformatics · Cancer Genomics</p>
+    <p class="bio">
+      I build tools and analyses that turn raw sequencing data into biological insight —
+      from mutation landscapes to survival models. This page collects a set of small,
+      self-contained projects, each built on public cancer genomics datasets.
+    </p>
+  </div>
+</header>
+
+<div class="variant-track">
+  <div class="wrap">
+    <div class="track-row" id="track-row"></div>
+    <div class="track-legend">
+      <span><span class="dot" style="background:#3B6E8F"></span>Missense</span>
+      <span><span class="dot" style="background:#B5433E"></span>Nonsense</span>
+      <span><span class="dot" style="background:#C98A3E"></span>Frameshift</span>
+      <span><span class="dot" style="background:#6C5B8C"></span>Splice site</span>
+      <span><span class="dot" style="background:#B8B4A8"></span>Silent</span>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="wrap">
+
+    <section id="projects">
+      <h2 class="eyebrow">Projects</h2>
+
+      <a class="project-card" href="projects/mutation-landscape.html">
+        <div class="row">
+          <h3>Mutation Landscape Explorer</h3>
+          <span class="tag">Analysis</span>
+        </div>
+        <p>
+          Cohort-level mutation analysis of TCGA-LAML (acute myeloid leukemia): an oncoplot
+          of the most frequently mutated genes and a breakdown of mutation types across 193 tumor samples.
+        </p>
+        <div class="stack">python · pandas · matplotlib · MAF/TCGA data</div>
+      </a>
+
+      <a class="project-card tag-stats" href="projects/survival-analysis.html">
+        <div class="row">
+          <h3>Survival Analysis Dashboard</h3>
+          <span class="tag">Statistics</span>
+        </div>
+        <p>
+          Kaplan-Meier survival curves and log-rank tests comparing patient outcomes by mutation
+          status across four AML driver genes in TCGA-LAML.
+        </p>
+        <div class="stack">python · lifelines · pandas · TCGA-LAML clinical data</div>
+      </a>
+
+      <a class="project-card tag-ml" href="projects/driver-classifier.html">
+        <div class="row">
+          <h3>Driver Mutation Classifier</h3>
+          <span class="tag">Machine Learning</span>
+        </div>
+        <p>
+          A Random Forest classifier that predicts whether a mutation sits in a known cancer
+          driver gene, using only mutation-level features (VAF, hotspot recurrence, variant type)
+          — not gene identity — to avoid trivially memorizing the label.
+        </p>
+        <div class="stack">python · scikit-learn · pandas · TCGA-LAML MAF data</div>
+      </a>
+
+      <a class="project-card tag-pipeline" href="projects/variant-annotator.html">
+        <div class="row">
+          <h3>Variant Annotation Pipeline</h3>
+          <span class="tag">Pipeline</span>
+        </div>
+        <p>
+          A from-scratch annotator that maps raw variant positions to genes and predicts variant
+          type, validated against the professionally annotated MAF as ground truth — including
+          a real bug found and fixed along the way.
+        </p>
+        <div class="stack">python · pandas · scikit-learn · TCGA-LAML MAF data</div>
+      </a>
+    </section>
+
+    <section id="skills">
+      <h2 class="eyebrow">Tools &amp; Skills</h2>
+      <div class="gene-panel">
+        <div><span class="k">Languages</span>Python · R · Bash</div>
+        <div><span class="k">Genomics</span>MAF · VCF · BAM</div>
+        <div><span class="k">Libraries</span>pandas · NumPy · Biopython</div>
+        <div><span class="k">Statistics</span>Survival analysis · Regression</div>
+        <div><span class="k">Data sources</span>TCGA · cBioPortal · GEO</div>
+        <div><span class="k">Workflow</span>Snakemake · Git</div>
+      </div>
+    </section>
+
+    <section id="contact">
+      <h2 class="eyebrow">Contact</h2>
+      <p>
+        Get in touch:
+        <a href="https://github.com/parhamsalimi2004/parhamsalimi2004" target="_blank" rel="noopener">GitHub</a> ·
+        <a href="https://www.linkedin.com/in/parham-salimi-13a781217" target="_blank" rel="noopener">LinkedIn</a>
+      </p>
+    </section>
+
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    Built with public cancer genomics datasets (TCGA). Source on <a href="https://github.com/parhamsalimi2004/bioinformatics-portfolio" target="_blank" rel="noopener">GitHub</a>.
+  </div>
+</footer>
+
+<script>
+  // Build the variant-track divider: a randomized strip of colored ticks
+  // using the same MAF variant-classification colors as the legend below.
+  const colors = ["#3B6E8F","#3B6E8F","#3B6E8F","#B5433E","#C98A3E","#6C5B8C","#B8B4A8","#B8B4A8"];
+  const row = document.getElementById('track-row');
+  const n = 90;
+  for (let i = 0; i < n; i++) {
+    const s = document.createElement('span');
+    s.style.background = colors[Math.floor(Math.random() * colors.length)];
+    row.appendChild(s);
+  }
+</script>
+
+</body>
+</html>

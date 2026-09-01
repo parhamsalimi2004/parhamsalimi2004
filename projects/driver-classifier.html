@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Driver Mutation Classifier — Parham</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body class="project-page">
+
+<nav class="top">
+  <div class="wrap">
+    <a class="brand" href="../index.html" style="text-decoration:none;">Parham</a>
+    <span class="links">
+      <a href="../index.html#projects">Projects</a>
+      <a href="../index.html#contact">Contact</a>
+    </span>
+  </div>
+</nav>
+
+<main>
+  <div class="wrap">
+    <article>
+      <a class="back" href="../index.html#projects">&larr; Back to projects</a>
+      <h1>Driver Mutation Classifier</h1>
+      <p class="meta">Machine learning · Python, scikit-learn · Dataset: TCGA-LAML (MAF)</p>
+
+      <p>
+        Not every mutation in a tumor matters &mdash; most are "passengers" that came along for
+        the ride, while a small number are "drivers" that actually contribute to the cancer.
+        This project trains a classifier to distinguish the two, using only properties of the
+        mutation itself &mdash; not which gene it's in.
+      </p>
+
+      <h2>Avoiding a lookup table disguised as a model</h2>
+      <p>
+        The obvious shortcut &mdash; "is this mutation's gene on a list of known driver genes?"
+        &mdash; isn't machine learning, it's a dictionary lookup. For this to be a genuine
+        classifier, gene identity can't appear as an input feature. Instead, the label
+        (driver-gene mutation vs. not) comes from checking gene membership against a curated
+        25-gene AML driver panel from
+        <a href="https://www.nejm.org/doi/full/10.1056/NEJMoa1516192" target="_blank" rel="noopener">Papaemmanuil et al. 2016 (NEJM)</a>,
+        but the <em>features</em> the model actually sees are generic, gene-agnostic properties
+        of the mutation:
+      </p>
+      <ul>
+        <li><strong>VAF</strong> (variant allele frequency) &mdash; driver mutations tend to be more clonal</li>
+        <li><strong>Hotspot recurrence</strong> &mdash; how many other mutations in the cohort hit the exact same amino acid position</li>
+        <li><strong>Variant classification</strong> &mdash; missense, truncating (nonsense/frameshift/splice), silent</li>
+        <li><strong>Variant type</strong> &mdash; SNP vs. indel</li>
+      </ul>
+      <p>
+        The idea: if the model can predict "driver-gene mutation" reasonably well from <em>only</em>
+        these generic properties, that's evidence the properties themselves carry real biological
+        signal &mdash; which is exactly the logic real driver-detection tools (e.g. MutSigCV,
+        OncodriveCLUST) are built on.
+      </p>
+
+      <h2>Class imbalance</h2>
+      <p>
+        Of 2,041 mutations with complete data, only 255 (12.5%) fall in a driver gene &mdash;
+        a realistic imbalance, since most mutations genuinely are passengers. Both models were
+        trained with <code>class_weight="balanced"</code> so the classifier doesn't just learn
+        to always predict "non-driver" and get 87% accuracy for free.
+      </p>
+
+      <h2>Results</h2>
+      <figure>
+        <img src="../assets/img/driver_classifier.png" alt="ROC curves, confusion matrix, and feature importance for the driver mutation classifier">
+        <figcaption>Fig. 1 — ROC curves for both models, Random Forest confusion matrix, and feature importance ranking.</figcaption>
+      </figure>
+      <p>
+        Random Forest reached <strong>ROC-AUC 0.894</strong> (Logistic Regression: 0.859) on a held-out
+        test set. More interesting than the headline number: <strong>hotspot recurrence dominates
+        feature importance</strong>, well ahead of VAF or mutation type. That matches real cancer
+        genomics practice directly &mdash; recurrence at the same protein position across many
+        independent patients is one of the strongest statistical signals of positive selection
+        (a mutation being repeatedly "chosen" because it benefits the tumor), and it's the core
+        idea behind several real driver-detection algorithms.
+      </p>
+      <p>
+        The confusion matrix shows the realistic trade-off of an imbalanced problem: 48 of 64
+        true driver-gene mutations were caught (75% recall), at the cost of 64 false positives
+        among non-drivers &mdash; a deliberate precision/recall trade-off from balancing the
+        classes, not a flaw to hide.
+      </p>
+
+      <h2>What I'd extend next</h2>
+      <p>
+        Add real conservation scores (e.g. PhyloP or GERP) and predicted functional impact
+        scores (SIFT/PolyPhen) as features, and validate the gene panel/label choice against
+        a second, independent driver gene list (e.g. IntOGen) to check the result isn't an
+        artifact of which panel was used to define "driver."
+      </p>
+    </article>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    Built with public cancer genomics datasets (TCGA). Source on <a href="https://github.com/yourusername/bioinformatics-portfolio" target="_blank" rel="noopener">GitHub</a>.
+  </div>
+</footer>
+
+</body>
+</html>
